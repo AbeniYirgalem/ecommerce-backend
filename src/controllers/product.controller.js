@@ -20,7 +20,7 @@ const mapProduct = (p) => {
 };
 
 // Generic fetch with optional keyword/category filters
-const getProductsByRole = async (_role, req, res, next) => {
+export const getProducts = async (req, res, next) => {
   try {
     const pageSize = 12;
     const page = Number(req.query.pageNumber) || 1;
@@ -30,10 +30,12 @@ const getProductsByRole = async (_role, req, res, next) => {
     const categoryQuery = req.query.category
       ? { category: req.query.category }
       : {};
+    const sellerQuery = req.query.seller ? { seller: req.query.seller } : {};
 
     const query = {
       ...keyword,
       ...categoryQuery,
+      ...sellerQuery,
       status: "active",
     };
 
@@ -57,20 +59,25 @@ const getProductsByRole = async (_role, req, res, next) => {
   }
 };
 
-// @desc    Get all merchant products
-// @route   GET /api/products/merchant-products
-export const getMerchantProducts = (req, res, next) =>
-  getProductsByRole(null, req, res, next);
+// @desc    Get products created by the authenticated user
+// @route   GET /api/products/my
+// @access  Private
+export const getMyProducts = async (req, res, next) => {
+  try {
+    // Debug logs help trace auth context and query results
+    console.log("[getMyProducts] user:", req.user?._id?.toString());
 
-// @desc    Get all student products
-// @route   GET /api/products/student-products
-export const getStudentProducts = (req, res, next) =>
-  getProductsByRole(null, req, res, next);
+    const products = await Listing.find({ seller: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate("seller", "name email");
 
-// @desc    Get all tutor services
-// @route   GET /api/products/tutor-services
-export const getTutorServices = (req, res, next) =>
-  getProductsByRole(null, req, res, next);
+    console.log("[getMyProducts] found:", products.length);
+
+    res.json(products.map(mapProduct));
+  } catch (error) {
+    next(error);
+  }
+};
 
 // @desc    Search products by keyword across title, description, tags
 // @route   GET /api/products/search
@@ -97,24 +104,6 @@ export const searchProducts = async (req, res, next) => {
   }
 };
 
-// @desc    Get all distinct categories
-// @route   GET /api/products/categories
-export const getCategories = async (_req, res, next) => {
-  try {
-    const categories = [
-      "Textbooks",
-      "Electronics",
-      "Clothes",
-      "Stationery",
-      "Dormitory",
-      "Other",
-    ];
-    res.json(categories);
-  } catch (error) {
-    next(error);
-  }
-};
-
 // @desc    Get a single product (listing) by ID
 // @route   GET /api/products/:id
 export const getProductById = async (req, res, next) => {
@@ -127,7 +116,7 @@ export const getProductById = async (req, res, next) => {
       console.log("Product seller payload", product.seller);
       res.json(mapProduct(product));
     } else {
-      res.status(404).json({ message: "Product not found" });
+      res.status(404).json({ success: false, message: "Product not found." });
     }
   } catch (error) {
     next(error);
@@ -166,6 +155,7 @@ export const seedDemoProducts = async (req, res, next) => {
     const existingCount = await Listing.countDocuments({ isDemo: true });
     if (existingCount > 0) {
       return res.json({
+        success: true,
         message: `Demo products already exist (${existingCount} items). Skipping seed.`,
         count: existingCount,
         seeded: false,
@@ -190,6 +180,7 @@ export const seedDemoProducts = async (req, res, next) => {
     const inserted = await Listing.insertMany(listingDocs);
 
     res.status(201).json({
+      success: true,
       message: `Successfully seeded ${inserted.length} demo products!`,
       count: inserted.length,
       seeded: true,
