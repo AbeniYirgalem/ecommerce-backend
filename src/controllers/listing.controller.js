@@ -143,7 +143,8 @@ export const createListing = async (req, res, next) => {
       tags: normalizedTags,
       images: images.length ? images : [primaryImage],
       imageUrl: primaryImage, // legacy compatibility
-      seller: req.user.id,
+      // Explicitly store the authenticated user's ObjectId
+      seller: req.user._id,
       phoneNumber: phoneNumber ? phoneNumber.toString().trim() : undefined,
     });
 
