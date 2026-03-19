@@ -1,4 +1,4 @@
-import User from '../models/User.model.js';
+import User from "../models/User.model.js";
 
 // @desc    Update user profile
 // @route   PUT /api/users/profile
@@ -9,29 +9,31 @@ export const updateProfile = async (req, res, next) => {
 
     if (user) {
       user.name = req.body.name || user.name;
-      user.university = req.body.university !== undefined ? req.body.university : user.university;
-      
+      user.university =
+        req.body.university !== undefined
+          ? req.body.university
+          : user.university;
+
       // Allow role updates (e.g., student -> tutor)
-      if (req.body.role && ['student', 'merchant', 'tutor', 'campus_admin'].includes(req.body.role)) {
+      if (
+        req.body.role &&
+        ["student", "merchant", "tutor", "campus_admin"].includes(req.body.role)
+      ) {
         user.role = req.body.role;
       }
-      
+
       if (req.body.password) {
         user.password = req.body.password;
       }
 
       const updatedUser = await user.save();
+      const responseUser = updatedUser.toObject();
+      responseUser.profile_picture =
+        responseUser.avatar || responseUser.profile_picture || "";
 
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        university: updatedUser.university,
-        avatar: updatedUser.avatar,
-      });
+      res.json(responseUser);
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: "User not found" });
     }
   } catch (error) {
     next(error);
@@ -44,21 +46,27 @@ export const updateProfile = async (req, res, next) => {
 export const updateAvatar = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a file' });
+      return res.status(400).json({ message: "Please upload a file" });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Replace backslashes for windows paths to normalize URL
-    const imageUrl = `/${req.file.path.replace(/\\/g, '/')}`;
+    const imageUrl = req.file?.path || req.file?.secure_url;
     user.avatar = imageUrl;
+    user.profile_picture = imageUrl;
 
-    await user.save();
+    const savedUser = await user.save();
+    const responseUser = savedUser.toObject();
+    responseUser.profile_picture =
+      responseUser.avatar || responseUser.profile_picture || "";
 
-    res.json({ avatar: user.avatar, message: 'Avatar updated successfully' });
+    res.json({
+      message: "Avatar updated successfully",
+      user: responseUser,
+    });
   } catch (error) {
     next(error);
   }
@@ -72,13 +80,15 @@ export const toggleFavorite = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     const listingId = req.params.listingId;
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const isFavorited = user.favorites.includes(listingId);
 
     if (isFavorited) {
       // Remove
-      user.favorites = user.favorites.filter(id => id.toString() !== listingId);
+      user.favorites = user.favorites.filter(
+        (id) => id.toString() !== listingId,
+      );
     } else {
       // Add
       user.favorites.push(listingId);
