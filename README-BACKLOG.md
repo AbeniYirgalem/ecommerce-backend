@@ -8,9 +8,9 @@
 
 **UniBazzar** is a campus marketplace platform where students buy, sell, and trade items safely within their university community. The AI chatbot helps users:
 
-- 🔍 Search listings by keyword, category, or price range
+- 🔍 Search products by keyword, category, or price range
 - 💡 Get personalized item recommendations powered by **Google Gemini**
-- 📝 Learn how to post their own listings
+- 📝 Learn how to post their own products
 - 💬 Ask general campus marketplace questions
 
 This document covers the **backlog (queue) system** added to the chatbot so it can handle heavy traffic without degrading the user experience or crashing the server.
@@ -22,6 +22,7 @@ This document covers the **backlog (queue) system** added to the chatbot so it c
 A **backlog** (or job queue) is a buffer between your HTTP server and a slow or resource-intensive operation — in our case, calling the Gemini AI API.
 
 ### Without a queue (synchronous)
+
 ```
 User → HTTP Request → Server calls Gemini → waits 2–8 s → Response
                                 ↑
@@ -29,6 +30,7 @@ User → HTTP Request → Server calls Gemini → waits 2–8 s → Response
 ```
 
 ### With a queue (asynchronous)
+
 ```
 User → POST /api/chat/queue → Job added to Redis → 202 Accepted (instant)
                                       ↓
@@ -38,6 +40,7 @@ User → POST /api/chat/queue → Job added to Redis → 202 Accepted (instant)
 ```
 
 Benefits:
+
 - ✅ Instant HTTP response (no waiting)
 - ✅ Automatic retries on failure
 - ✅ Concurrency control (no overload)
@@ -89,22 +92,23 @@ Benefits:
 
 ## 4. 🛠 Tech Stack
 
-| Technology    | Role                                      |
-|---------------|-------------------------------------------|
-| Node.js       | Runtime                                   |
-| Express       | HTTP framework                            |
-| BullMQ        | Job queue (producer + worker)             |
-| ioredis       | Redis client for BullMQ                   |
-| Redis         | Queue storage + response cache            |
-| Google Gemini | AI language model                         |
-| Mongoose      | MongoDB ODM for ChatLog persistence       |
-| express-rate-limit | Per-IP rate limiting on queue route  |
+| Technology         | Role                                |
+| ------------------ | ----------------------------------- |
+| Node.js            | Runtime                             |
+| Express            | HTTP framework                      |
+| BullMQ             | Job queue (producer + worker)       |
+| ioredis            | Redis client for BullMQ             |
+| Redis              | Queue storage + response cache      |
+| Google Gemini      | AI language model                   |
+| Mongoose           | MongoDB ODM for ChatLog persistence |
+| express-rate-limit | Per-IP rate limiting on queue route |
 
 ---
 
 ## 5. 📦 Installation
 
 ### Prerequisites
+
 - Node.js ≥ 18
 - MongoDB (Atlas or local)
 - Redis ≥ 6 (see section 6 below)
@@ -134,6 +138,7 @@ npm run dev
 Redis is required for BullMQ to work. Choose one option:
 
 ### Option A — Local (Windows via WSL2)
+
 ```bash
 # In WSL2 terminal:
 sudo service redis-server start
@@ -143,17 +148,21 @@ redis-cli ping   # Should respond: PONG
 ```
 
 ### Option B — Local (Windows via Docker)
+
 ```bash
 docker run -d -p 6379:6379 --name redis redis:7-alpine
 ```
 
 ### Option C — Cloud (Free tier — Upstash)
+
 1. Go to [upstash.com](https://upstash.com) → Create a Redis database
 2. Copy the `rediss://...` URL
 3. Set `REDIS_URL=rediss://:password@hostname:port` in `.env`
 
 ### Verify the connection
+
 When you start the server you should see:
+
 ```
 [redis] Connected to Redis successfully
 [chatWorker] 🚀 Worker started. Queue: "chatbot-queue" | Concurrency: 5
@@ -192,18 +201,20 @@ When you start the server you should see:
 ```
 
 ### Retry strategy
-| Attempt | Delay  |
-|---------|--------|
-| 1st     | 2 s    |
-| 2nd     | 4 s    |
-| 3rd     | 8 s    |
+
+| Attempt | Delay                                       |
+| ------- | ------------------------------------------- |
+| 1st     | 2 s                                         |
+| 2nd     | 4 s                                         |
+| 3rd     | 8 s                                         |
 | Final   | Job marked `failed`, error saved to MongoDB |
 
 ---
 
 ## 8. 📡 API Endpoints
 
-### `POST /api/chat` *(legacy — synchronous)*
+### `POST /api/chat` _(legacy — synchronous)_
+
 Kept for backwards compatibility. Blocks until AI responds.
 
 ```bash
@@ -211,16 +222,19 @@ curl -X POST http://localhost:5000/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "hello"}'
 ```
+
 ```json
 { "type": "text", "reply": "Hello! I can help you find or sell items..." }
 ```
 
 ---
 
-### `POST /api/chat/queue` *(async — recommended)*
+### `POST /api/chat/queue` _(async — recommended)_
+
 Enqueues a chatbot message. Returns instantly.
 
 **Request:**
+
 ```bash
 curl -X POST http://localhost:5000/api/chat/queue \
   -H "Content-Type: application/json" \
@@ -233,13 +247,14 @@ curl -X POST http://localhost:5000/api/chat/queue \
 
 **Body fields:**
 
-| Field      | Type   | Required | Description                        |
-|------------|--------|----------|------------------------------------|
-| `message`  | string | ✅        | The user's chat message (max 2000 chars) |
-| `userId`   | string | ❌        | Identify the user (defaults to `"anonymous"`) |
-| `priority` | number | ❌        | Job priority: 1 = highest (optional) |
+| Field      | Type   | Required | Description                                   |
+| ---------- | ------ | -------- | --------------------------------------------- |
+| `message`  | string | ✅       | The user's chat message (max 2000 chars)      |
+| `userId`   | string | ❌       | Identify the user (defaults to `"anonymous"`) |
+| `priority` | number | ❌       | Job priority: 1 = highest (optional)          |
 
 **Response `202 Accepted`:**
+
 ```json
 {
   "success": true,
@@ -252,7 +267,8 @@ curl -X POST http://localhost:5000/api/chat/queue \
 
 ---
 
-### `GET /api/chat/status/:jobId` *(poll for result)*
+### `GET /api/chat/status/:jobId` _(poll for result)_
+
 Returns the current status and result of a queued job.
 
 ```bash
@@ -260,6 +276,7 @@ curl http://localhost:5000/api/chat/status/42
 ```
 
 **While processing:**
+
 ```json
 {
   "success": true,
@@ -273,6 +290,7 @@ curl http://localhost:5000/api/chat/status/42
 ```
 
 **When completed:**
+
 ```json
 {
   "success": true,
@@ -300,13 +318,13 @@ curl http://localhost:5000/api/chat/status/42
 
 **Possible `status` values:**
 
-| Status      | Meaning                                      |
-|-------------|----------------------------------------------|
-| `waiting`   | In the queue, not yet picked up              |
-| `active`    | Worker is currently processing               |
-| `completed` | Done — check `result`                        |
-| `failed`    | All retries exhausted — check `error`        |
-| `delayed`   | Waiting before retry (back-off)              |
+| Status      | Meaning                               |
+| ----------- | ------------------------------------- |
+| `waiting`   | In the queue, not yet picked up       |
+| `active`    | Worker is currently processing        |
+| `completed` | Done — check `result`                 |
+| `failed`    | All retries exhausted — check `error` |
+| `delayed`   | Waiting before retry (back-off)       |
 
 ---
 
@@ -328,7 +346,7 @@ ecommerce-backend/
 │   │
 │   ├── models/
 │   │   ├── ChatLog.model.js      # MongoDB schema for persisted chat history
-│   │   ├── Listing.model.js
+│   │   ├── Product.model.js
 │   │   ├── User.model.js
 │   │   └── Review.model.js
 │   │
@@ -361,19 +379,21 @@ Process 3: node src/workerOnly.js ← another worker instance
 ```
 
 Create `src/workerOnly.js`:
+
 ```js
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
-import connectDB from './config/db.js';
-import { startChatWorker } from './workers/chatWorker.js';
+import connectDB from "./config/db.js";
+import { startChatWorker } from "./workers/chatWorker.js";
 
 connectDB().then(() => {
   startChatWorker();
-  console.log('Worker-only process started');
+  console.log("Worker-only process started");
 });
 ```
 
 ### Using PM2 (process manager)
+
 ```bash
 npm install -g pm2
 
@@ -384,6 +404,7 @@ pm2 save
 ```
 
 ### Concurrency Control
+
 ```env
 # In .env — tune based on your server's RAM and CPU
 CHAT_QUEUE_CONCURRENCY=10
@@ -395,14 +416,14 @@ Each worker process handles up to `CHAT_QUEUE_CONCURRENCY` jobs simultaneously. 
 
 ## 11. 🔮 Future Improvements
 
-| Feature | Description |
-|---|---|
-| **WebSocket push** | Push job results to client via Socket.io instead of polling |
-| **Redis pub/sub** | Worker publishes completion events; server pushes to frontend |
-| **Bull Dashboard** | Add [@bull-board/express](https://github.com/felixmosh/bull-board) for a visual queue monitor |
-| **Dead Letter Queue** | Route permanently failed jobs to a separate queue for manual review |
-| **OpenAI fallback** | If Gemini fails, fall back to OpenAI GPT-4o-mini |
-| **Persistent Redis cache** | Replace in-memory cache in worker with Redis `GET`/`SETEX` for cross-process caching |
-| **Chat history** | Expose `GET /api/chat/history/:userId` to show past conversations from ChatLog |
-| **Auth-gated queue** | Require JWT to use the async queue endpoint (VIP users get priority 1) |
-| **Job progress** | Use `job.updateProgress()` to stream progress percentage back to the client |
+| Feature                    | Description                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| **WebSocket push**         | Push job results to client via Socket.io instead of polling                                   |
+| **Redis pub/sub**          | Worker publishes completion events; server pushes to frontend                                 |
+| **Bull Dashboard**         | Add [@bull-board/express](https://github.com/felixmosh/bull-board) for a visual queue monitor |
+| **Dead Letter Queue**      | Route permanently failed jobs to a separate queue for manual review                           |
+| **OpenAI fallback**        | If Gemini fails, fall back to OpenAI GPT-4o-mini                                              |
+| **Persistent Redis cache** | Replace in-memory cache in worker with Redis `GET`/`SETEX` for cross-process caching          |
+| **Chat history**           | Expose `GET /api/chat/history/:userId` to show past conversations from ChatLog                |
+| **Auth-gated queue**       | Require JWT to use the async queue endpoint (VIP users get priority 1)                        |
+| **Job progress**           | Use `job.updateProgress()` to stream progress percentage back to the client                   |
