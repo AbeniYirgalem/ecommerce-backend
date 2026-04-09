@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -11,9 +11,7 @@ import { notFound, errorHandler } from "./middlewares/error.middleware.js";
 // Route files
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
-import listingRoutes from "./routes/listing.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
@@ -69,9 +67,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Mount routers
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/listings", listingRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/chat", chatRoutes);
