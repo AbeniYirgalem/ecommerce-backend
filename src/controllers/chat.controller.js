@@ -1,4 +1,4 @@
-import Listing from "../models/Listing.model.js";
+﻿import Product from "../models/Product.model.js";
 import { generateGeminiReply } from "../services/gemini.service.js";
 import intents from "../services/intentDetector.js";
 import { addChatJob, chatQueue } from "../queue/chatQueue.js";
@@ -28,17 +28,17 @@ const searchProducts = async ({ category, keywords = [], limit = 60 }) => {
     ]);
   }
 
-  return Listing.find(query)
+  return Product.find(query)
     .populate("seller", "name email")
     .sort({ createdAt: -1 })
     .limit(limit);
 };
 
-const mapListingPreview = (listing) => {
-  const obj = listing.toObject ? listing.toObject() : listing;
+const mapListingPreview = (Product) => {
+  const obj = Product.toObject ? Product.toObject() : Product;
   const images = Array.isArray(obj.images) && obj.images.length ? obj.images : obj.imageUrl ? [obj.imageUrl] : [];
   return {
-    id: obj._id || listing._id,
+    id: obj._id || Product._id,
     title: obj.title,
     price: obj.price,
     category: obj.category,
@@ -46,7 +46,7 @@ const mapListingPreview = (listing) => {
     imageUrl: images[0],
     sellerName: obj.seller?.name,
     sellerEmail: obj.seller?.email,
-    link: `/products/${obj._id || listing._id}`,
+    link: `/products/${obj._id || Product._id}`,
   };
 };
 
@@ -61,7 +61,7 @@ const fetchAndComputePrice = (items, priceIntent, limit = MAX_RESULTS) => {
 
 const formatProductsForContext = (products) =>
   products.map((p) => {
-    const summary = [p.title, p.description].filter(Boolean).join(" — ");
+    const summary = [p.title, p.description].filter(Boolean).join(" â€” ");
     const link = `/products/${p._id || p.id}`;
     return `${p.title || "Item"} - ${p.price} ETB - ${summary} - ${link}`;
   }).join("\n");
@@ -96,7 +96,7 @@ export const chatWithAssistant = async (req, res, next) => {
       }
 
       if (!filtered.length) {
-        return res.json({ type: "text", reply: "I couldn't find matching items right now. Try browsing other categories or posting a 'Looking For' listing so sellers can reach out to you!" });
+        return res.json({ type: "text", reply: "I couldn't find matching items right now. Try browsing other categories or posting a 'Looking For' Product so sellers can reach out to you!" });
       }
 
       const mappedProducts = filtered.slice(0, MAX_RESULTS).map(mapListingPreview);
@@ -113,7 +113,7 @@ export const chatWithAssistant = async (req, res, next) => {
       return res.json({ type: "rag", reply: aiReply, products: mappedProducts, priceBand: band });
     }
 
-    if (intent.intent === "help") return res.json({ type: "text", reply: "To post a product:\n1) Go to your dashboard\n2) Click 'Add Listing'\n3) Upload images\n4) Set price, category, and description\n5) Add pickup or delivery note\n6) Submit." });
+    if (intent.intent === "help") return res.json({ type: "text", reply: "To post a product:\n1) Go to your dashboard\n2) Click 'Add Product'\n3) Upload images\n4) Set price, category, and description\n5) Add pickup or delivery note\n6) Submit." });
     if (intent.intent === "greeting") return res.json({ type: "text", reply: "Hello! I can help you find products, cafes, or tutoring services on UniBazzar. What are you looking for today?" });
     if (intent.intent === "about") return res.json({ type: "text", reply: "I'm the UniBazzar Assistant. I help students find items, check the cafe menu, and find tutors quickly!" });
 
@@ -161,3 +161,4 @@ export const getJobStatusController = async (req, res, next) => {
     next(error);
   }
 };
+
