@@ -1,10 +1,10 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import User from "../models/User.model.js";
 import sendEmail from "../utils/sendEmail.js";
 import { verificationEmailTemplate } from "../utils/emailTemplates.js";
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "30d",
@@ -166,3 +166,4 @@ export const logout = (req, res) => {
 
   res.status(200).json({ message: "Logged out" });
 };
+
