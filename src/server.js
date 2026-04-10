@@ -6,51 +6,62 @@ import { startChatWorker, stopChatWorker } from "./workers/chatWorker.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
-const shouldStartChatWorker = process.env.ENABLE_CHAT_WORKER === "true";
+const ENABLE_CHAT_WORKER = process.env.ENABLE_CHAT_WORKER === "true";
 
 /**
- * Bootstrap sequence:
- * 1. Connect to MongoDB
- * 2. Start the BullMQ chatbot worker (listens to Redis queue)
- * 3. Start the HTTP server
+ * ========================
+ * START SERVER
+ * ========================
  */
 connectDB()
   .then(() => {
-    if (shouldStartChatWorker) {
-      // Start chatbot worker only when explicitly enabled
+    console.log("✅ MongoDB Connected");
+
+    /**
+     * Start Redis / BullMQ worker (optional)
+     */
+    if (ENABLE_CHAT_WORKER) {
       startChatWorker();
+      console.log("✅ Chat worker started");
     } else {
-      console.log(
-        "[server] Chat worker disabled (set ENABLE_CHAT_WORKER=true to enable)",
-      );
+      console.log("[server] Chat worker disabled");
     }
 
+    /**
+     * Start Express server
+     */
     const server = app.listen(PORT, () => {
       console.log(
-        `ðŸš€ Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
+        `🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`
       );
     });
 
-    // â”€â”€ Graceful shutdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    /**
+     * ========================
+     * GRACEFUL SHUTDOWN
+     * ========================
+     */
     const shutdown = async (signal) => {
-      console.log(
-        `\n[server] ${signal} received â€” shutting down gracefully...`,
-      );
-      // Stop accepting new HTTP requests
+      console.log(`\n[server] ${signal} received. Shutting down...`);
+
       server.close(async () => {
-        if (shouldStartChatWorker) {
-          // Drain the BullMQ worker (finish in-flight jobs, then stop)
-          await stopChatWorker();
+        try {
+          if (ENABLE_CHAT_WORKER) {
+            await stopChatWorker();
+          }
+        } catch (err) {
+          console.error("Shutdown error:", err.message);
         }
-        console.log("[server] Shutdown complete.");
+
+        console.log("[server] Shutdown complete");
         process.exit(0);
       });
     };
 
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
     process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
   })
-  .catch((error) => {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
     process.exit(1);
   });
