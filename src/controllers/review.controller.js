@@ -1,4 +1,4 @@
-import Review from '../models/Review.model.js';
+﻿import Review from '../models/Review.model.js';
 import User from '../models/User.model.js';
 
 // @desc    Create new review
@@ -60,3 +60,4 @@ export const getReviews = async (req, res, next) => {
     next(error);
   }
 };
+
