@@ -9,7 +9,7 @@ The backend follows an MVC-like, scalable folder structure:
 - **`src/app.js`**: Express app configuration, middleware definitions (CORS, Helmet, Rate Limiter), and main route mounting.
 - **`src/server.js`**: Server initialization and MongoDB connection wrapper.
 - **`src/config/db.js`**: Mongoose connection logic.
-- **`src/models/`**: Mongoose database schemas (User, Listing, Review).
+- **`src/models/`**: Mongoose database schemas (User, Product, Review).
 - **`src/controllers/`**: Core API logic/handlers.
 - **`src/routes/`**: Express routers, defining RESTful endpoints.
 - **`src/middlewares/`**: Custom middlewares for authentication (JWT), error handling, multer file uploads, and express-validators.
@@ -26,12 +26,14 @@ The backend follows an MVC-like, scalable folder structure:
 ## Setup & Running Locally
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Environment Variables:**
    Ensure you have a `.env` file at the root of `ecommerce-backend/`. Example:
+
    ```env
    NODE_ENV=development
    PORT=5000
@@ -45,6 +47,7 @@ The backend follows an MVC-like, scalable folder structure:
    Make sure your local MongoDB instance is running, or replace `MONGO_URI` with a MongoDB Atlas connection string.
 
 4. **Run Server:**
+
    ```bash
    # Development mode (auto-restart)
    npm run dev
