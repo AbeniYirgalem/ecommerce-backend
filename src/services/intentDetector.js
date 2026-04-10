@@ -1,6 +1,6 @@
-/**
+﻿/**
  * intentDetector.js
- * ─────────────────────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Single source of truth for Chatbot intents and entity extraction.
  */
 
@@ -8,7 +8,7 @@ export const GREETING_KEYWORDS = ["hello", "hi", "hey", "hola", "yo", "sup", "go
 export const ABOUT_KEYWORDS = ["who are you", "what are you", "what can you do"];
 export const HELP_KEYWORDS = ["how to sell", "how do i sell", "post item", "post product"];
 export const TUTORING_KEYWORDS = ["tutor", "tutoring", "tutors", "teaching", "study help"];
-export const CAFE_KEYWORDS = ["cafe", "café", "coffee", "food", "drink", "menu", "eat", "lunch"];
+export const CAFE_KEYWORDS = ["cafe", "cafÃ©", "coffee", "food", "drink", "menu", "eat", "lunch"];
 
 export const PRICE_KEYWORDS = {
   cheap: ["cheap", "budget", "affordable", "low"],
@@ -91,27 +91,27 @@ export const detectIntent = (message) => {
 
 export const buildProductReply = (products) => {
   if (!products?.length) {
-    return "I couldn't find matching items right now. Try browsing other categories or posting a 'Looking For' listing so sellers can reach out to you!";
+    return "I couldn't find matching items right now. Try browsing other categories or posting a 'Looking For' Product so sellers can reach out to you!";
   }
   return products.map((p) => {
     const img = p.imageUrl ? `![IMAGE](${p.imageUrl})  \n` : "";
-    return `${img}${p.title}  \nPrice: ${Number(p.price).toLocaleString()} ETB  \n${p.category || 'Other'} • ${p.condition || 'new'}  \n[Link to product details](${p.link})`;
+    return `${img}${p.title}  \nPrice: ${Number(p.price).toLocaleString()} ETB  \n${p.category || 'Other'} â€¢ ${p.condition || 'new'}  \n[Link to product details](${p.link})`;
   }).join("\n\n---\n\n");
 };
 
 export const buildTutoringReply = () => {
-  const list = MOCK_TUTORS.map((t) => `- ${t.name}, ${t.subject} – ${t.rate} ETB/hr`).join("\n");
+  const list = MOCK_TUTORS.map((t) => `- ${t.name}, ${t.subject} â€“ ${t.rate} ETB/hr`).join("\n");
   return `Yes! Here are some tutors available:\n${list}`;
 };
 
 export const buildCafeReply = () => {
-  const list = MOCK_CAFE_MENU.map((c) => `- ${c.item} – ${c.price} ETB`).join("\n");
-  return `Today's café menu:\n${list}`;
+  const list = MOCK_CAFE_MENU.map((c) => `- ${c.item} â€“ ${c.price} ETB`).join("\n");
+  return `Today's cafÃ© menu:\n${list}`;
 };
 
 export const SYSTEM_PROMPT = (context, userMessage) => `You are a UniBazzar AI Agent. Your role is to help users find, buy, or sell items in the campus marketplace. Follow these rules strictly:
 
-1. **Database First**: Always query the database for the user’s request. Never respond with a generic message if products exist.
+1. **Database First**: Always query the database for the userâ€™s request. Never respond with a generic message if products exist.
 
 2. **Price Handling**: 
    - If the user asks for "cheap", "cheapest", "affordable", or a similar term, return the lowest-priced items matching their query.
@@ -126,11 +126,11 @@ export const SYSTEM_PROMPT = (context, userMessage) => `You are a UniBazzar AI A
    - Provide a clickable link to the product details page: \`/products/{product_id}\`.
 
 4. **Multiple Categories**:
-   - If the user asks about multiple things (e.g., laptops, tutoring, café), handle each separately and give relevant data for each.
+   - If the user asks about multiple things (e.g., laptops, tutoring, cafÃ©), handle each separately and give relevant data for each.
 
 5. **Fallback**:
    - Only use a fallback message if **no items exist** in the database for the query.
-   - Suggest posting a "Looking For" listing or browsing related categories if nothing matches.
+   - Suggest posting a "Looking For" Product or browsing related categories if nothing matches.
 
 6. **Tone**: Friendly, helpful, and concise. Guide users to take actions on UniBazzar.
 
@@ -138,7 +138,7 @@ export const SYSTEM_PROMPT = (context, userMessage) => `You are a UniBazzar AI A
 ![IMAGE](image_url_here)
 HP Laptop 8GB RAM  
 Price: 50,000 ETB  
-Electronics • new  
+Electronics â€¢ new  
 [Link to product details](link_url_here)
 
 Database Items:
@@ -150,3 +150,4 @@ Assistant:`;
 export default {
   detectIntent, buildProductReply, buildTutoringReply, buildCafeReply, SYSTEM_PROMPT, escapeRegex
 };
+
