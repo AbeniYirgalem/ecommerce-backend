@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ChatLog.model.js
  * ----------------
  * Mongoose schema for persisting chatbot interactions.
@@ -12,13 +12,13 @@ import mongoose from "mongoose";
 
 const chatLogSchema = new mongoose.Schema(
   {
-    /** BullMQ job ID — used for status lookups */
+    /** BullMQ job ID â€” used for status lookups */
     jobId: {
       type: String,
       index: true,
     },
 
-    /** User sending the message — "anonymous" for unauthenticated users */
+    /** User sending the message â€” "anonymous" for unauthenticated users */
     userId: {
       type: String,
       default: "anonymous",
@@ -53,7 +53,7 @@ const chatLogSchema = new mongoose.Schema(
       default: null,
     },
 
-    /** Product listings included in a RAG response */
+    /** Product products included in a RAG response */
     products: {
       type: [mongoose.Schema.Types.Mixed],
       default: [],
@@ -88,3 +88,4 @@ chatLogSchema.index({ userId: 1, createdAt: -1 });
 const ChatLog = mongoose.model("ChatLog", chatLogSchema);
 
 export default ChatLog;
+
