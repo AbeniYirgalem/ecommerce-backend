@@ -1,4 +1,4 @@
-import multer from 'multer';
+﻿import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary.js';
 
@@ -6,7 +6,7 @@ import cloudinary from '../config/cloudinary.js';
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'unibazzar/listings', // Cloudinary folder name
+    folder: 'unibazzar/products', // Cloudinary folder name
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     transformation: [{ width: 1000, crop: 'limit' }], // Optional: optimize image sizes automatically
   },
@@ -18,3 +18,4 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
+
