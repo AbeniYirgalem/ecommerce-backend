@@ -1,14 +1,14 @@
-/**
+﻿/**
  * chatWorker.js
  * -------------
  * BullMQ Worker that consumes jobs from the "chatbot-queue".
  *
  * Architecture overview:
- *   HTTP Request → chatQueue (Redis) → Worker (this file) → aiService → MongoDB
+ *   HTTP Request â†’ chatQueue (Redis) â†’ Worker (this file) â†’ aiService â†’ MongoDB
  *
  * The worker runs concurrently with the Express server in the same Node.js
  * process. For higher scale, it can be extracted to a separate process or
- * container — just import and call startChatWorker() from that entry point.
+ * container â€” just import and call startChatWorker() from that entry point.
  *
  * Concurrency is controlled by CHAT_QUEUE_CONCURRENCY env variable (default 5).
  * In production, run multiple worker processes to scale horizontally.
@@ -22,9 +22,9 @@ import ChatLog from "../models/ChatLog.model.js";
 const QUEUE_NAME = "chatbot-queue";
 const CONCURRENCY = parseInt(process.env.CHAT_QUEUE_CONCURRENCY || "5", 10);
 
-// ─── Cache helpers (in-memory TTL cache as lightweight deduplication) ─────────
+// â”€â”€â”€ Cache helpers (in-memory TTL cache as lightweight deduplication) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // For a production Redis cache, replace with ioredis.get / ioredis.setex calls.
-const queryCache = new Map(); // key: normalized message → { result, expiresAt }
+const queryCache = new Map(); // key: normalized message â†’ { result, expiresAt }
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const getCachedResult = (message) => {
@@ -48,10 +48,10 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
-// ─── Job Processor ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Job Processor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
- * processJob — the function BullMQ calls for each job.
+ * processJob â€” the function BullMQ calls for each job.
  *
  * @param {import('bullmq').Job} job
  */
@@ -61,16 +61,16 @@ const processJob = async (job) => {
 
   console.log(`${logContext} Starting. Message: "${message.slice(0, 80)}"`);
 
-  // ── 1. Mark the DB record as processing ───────────────────────────────────
+  // â”€â”€ 1. Mark the DB record as processing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   await ChatLog.findOneAndUpdate(
     { jobId: job.id },
     { status: "processing" },
   );
 
-  // ── 2. Check cache for identical recent query ─────────────────────────────
+  // â”€â”€ 2. Check cache for identical recent query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const cached = getCachedResult(message);
   if (cached) {
-    console.log(`${logContext} Cache hit — returning cached result`);
+    console.log(`${logContext} Cache hit â€” returning cached result`);
     await ChatLog.findOneAndUpdate(
       { jobId: job.id },
       {
@@ -85,14 +85,14 @@ const processJob = async (job) => {
     return cached; // BullMQ stores this as job.returnvalue
   }
 
-  // ── 3. Call the AI service ────────────────────────────────────────────────
+  // â”€â”€ 3. Call the AI service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const result = await processMessage(message);
   console.log(`${logContext} AI processed. Type: ${result.type}`);
 
-  // ── 4. Cache the result ───────────────────────────────────────────────────
+  // â”€â”€ 4. Cache the result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setCachedResult(message, result);
 
-  // ── 5. Persist to MongoDB ─────────────────────────────────────────────────
+  // â”€â”€ 5. Persist to MongoDB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   await ChatLog.findOneAndUpdate(
     { jobId: job.id },
     {
@@ -109,17 +109,17 @@ const processJob = async (job) => {
   return result; // BullMQ serialises this into job.returnvalue in Redis
 };
 
-// ─── Worker Lifecycle ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Worker Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 let workerInstance = null;
 
 /**
- * startChatWorker — creates and starts the BullMQ Worker instance.
+ * startChatWorker â€” creates and starts the BullMQ Worker instance.
  * Call this once from server.js after the DB connection is established.
  */
 export const startChatWorker = () => {
   if (workerInstance) {
-    console.warn("[chatWorker] Worker already running — skipping duplicate start");
+    console.warn("[chatWorker] Worker already running â€” skipping duplicate start");
     return workerInstance;
   }
 
@@ -131,15 +131,15 @@ export const startChatWorker = () => {
     lockRenewTime: 20_000, // Renew every 20 s
   });
 
-  // ── Event listeners ─────────────────────────────────────────────────────────
+  // â”€â”€ Event listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   workerInstance.on("completed", (job, result) => {
-    console.log(`[chatWorker] ✅ Job ${job.id} completed. Type: ${result?.type}`);
+    console.log(`[chatWorker] âœ… Job ${job.id} completed. Type: ${result?.type}`);
   });
 
   workerInstance.on("failed", async (job, err) => {
     console.error(
-      `[chatWorker] ❌ Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err.message}`,
+      `[chatWorker] âŒ Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err.message}`,
     );
     // Update DB record so polling endpoint can surface the failure
     if (job?.id) {
@@ -157,7 +157,7 @@ export const startChatWorker = () => {
   });
 
   workerInstance.on("stalled", (jobId) => {
-    console.warn(`[chatWorker] ⚠️  Job ${jobId} stalled — will be retried`);
+    console.warn(`[chatWorker] âš ï¸  Job ${jobId} stalled â€” will be retried`);
   });
 
   workerInstance.on("error", (err) => {
@@ -165,14 +165,14 @@ export const startChatWorker = () => {
   });
 
   console.log(
-    `[chatWorker] 🚀 Worker started. Queue: "${QUEUE_NAME}" | Concurrency: ${CONCURRENCY}`,
+    `[chatWorker] ðŸš€ Worker started. Queue: "${QUEUE_NAME}" | Concurrency: ${CONCURRENCY}`,
   );
 
   return workerInstance;
 };
 
 /**
- * stopChatWorker — gracefully shuts down the worker.
+ * stopChatWorker â€” gracefully shuts down the worker.
  * Useful for graceful shutdown hooks (SIGTERM / SIGINT).
  */
 export const stopChatWorker = async () => {
@@ -184,3 +184,4 @@ export const stopChatWorker = async () => {
 };
 
 export default { startChatWorker, stopChatWorker };
+
