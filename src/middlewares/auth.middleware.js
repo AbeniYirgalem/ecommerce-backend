@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 import User from "../models/User.model.js";
 
 // Minimal cookie parser to avoid an extra dependency; returns an object of key/value pairs.
@@ -56,3 +56,4 @@ export const protectWithMessage = (message) => makeProtect(message);
 
 // Roles are removed; this is now a passthrough for backward compatibility
 export const authorize = () => (req, res, next) => next();
+
