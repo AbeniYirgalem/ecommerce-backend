@@ -1,4 +1,4 @@
-/**
+﻿/**
  * chatQueue.js
  * ------------
  * Defines the BullMQ Queue for chatbot messages.
@@ -19,7 +19,7 @@ const QUEUE_NAME = "chatbot-queue";
 
 /**
  * The BullMQ queue instance.
- * Shared across the application — import this wherever you need to add jobs.
+ * Shared across the application â€” import this wherever you need to add jobs.
  */
 export const chatQueue = new Queue(QUEUE_NAME, {
   connection: redisConnection,
@@ -40,7 +40,7 @@ export const chatQueue = new Queue(QUEUE_NAME, {
 });
 
 /**
- * addChatJob — convenience wrapper that adds a structured job to the queue.
+ * addChatJob â€” convenience wrapper that adds a structured job to the queue.
  *
  * @param {string} userId   - The user's ID (or "anonymous")
  * @param {string} message  - The raw user message text
@@ -66,3 +66,4 @@ export const addChatJob = async (userId, message, opts = {}) => {
 };
 
 export default chatQueue;
+
