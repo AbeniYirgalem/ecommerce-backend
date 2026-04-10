@@ -1,4 +1,4 @@
-import User from "../models/User.model.js";
+﻿import User from "../models/User.model.js";
 
 // @desc    Get current user (alias for frontend expected route)
 // @route   GET /api/users/me/
@@ -16,3 +16,4 @@ export const getMeUser = async (req, res, next) => {
     next(error);
   }
 };
+
