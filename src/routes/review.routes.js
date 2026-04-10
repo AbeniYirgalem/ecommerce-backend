@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import { body } from "express-validator";
 import { createReview, getReviews } from "../controllers/review.controller.js";
 import { protectWithMessage } from "../middlewares/auth.middleware.js";
@@ -24,3 +24,4 @@ router.post(
 router.get("/:targetUserId", getReviews);
 
 export default router;
+
