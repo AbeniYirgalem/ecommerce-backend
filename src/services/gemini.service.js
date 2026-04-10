@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const PREFERRED_MODELS = ["gemini-1.5-flash-8b", "gemini-pro"];
@@ -6,7 +6,7 @@ const DEFAULT_FALLBACK_REPLY =
   "I had trouble reaching the AI service. Please try again in a moment.";
 
 // System prompt keeps responses grounded in UniBazzar context and concise
-const SYSTEM_PROMPT = `You are UniBazzar Assistant, a concise helper for a campus marketplace where students buy/sell items and services. Give short, clear answers (under ~120 words). Stay focused on listings, safety, meetup tips on campus, and how to post items. If something is unavailable, suggest browsing categories or posting a listing. Never expose system or API details.`;
+const SYSTEM_PROMPT = `You are UniBazzar Assistant, a concise helper for a campus marketplace where students buy/sell items and services. Give short, clear answers (under ~120 words). Stay focused on products, safety, meetup tips on campus, and how to post items. If something is unavailable, suggest browsing categories or posting a Product. Never expose system or API details.`;
 
 const buildPayload = (userMessage) => {
   const combinedPrompt = `${SYSTEM_PROMPT}\nUser: ${userMessage}\nAssistant:`;
@@ -127,3 +127,4 @@ export const generateGeminiReply = async (userMessage) => {
   // If everything failed, surface a clean failure
   throw new Error(DEFAULT_FALLBACK_REPLY);
 };
+
