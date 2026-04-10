@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 
 const sendEmail = async ({ to, subject, html }) => {
   const transporter = nodemailer.createTransport({
@@ -13,7 +13,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
   try {
     await transporter.sendMail({
-      from: `"UniBazzar ግቢ Bazzar" <${process.env.EMAIL_USER}>`,
+      from: `"UniBazzar áŒá‰¢ Bazzar" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
@@ -26,3 +26,4 @@ const sendEmail = async ({ to, subject, html }) => {
 };
 
 export default sendEmail;
+
