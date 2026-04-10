@@ -1,4 +1,4 @@
-// Friendly 404 handler
+﻿// Friendly 404 handler
 export const notFound = (_req, res) => {
   res.status(404).json({ success: false, message: "Item not found." });
 };
@@ -38,3 +38,4 @@ export const errorHandler = (err, req, res, _next) => {
 
   res.status(statusCode).json({ success: false, message });
 };
+
