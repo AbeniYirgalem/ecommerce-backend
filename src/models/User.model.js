@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
@@ -49,14 +49,14 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["student", "merchant", "tutor", "campus_admin"],
-      default: "student",
+      enum: ["user"],
+      default: "user",
     },
     favorites: {
       type: [
         {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Listing",
+          ref: "Product",
         },
       ],
       default: [],
