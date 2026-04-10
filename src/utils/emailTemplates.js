@@ -1,4 +1,4 @@
-export const verificationEmailTemplate = ({ name, verificationUrl }) => `
+﻿export const verificationEmailTemplate = ({ name, verificationUrl }) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,14 +14,14 @@ export const verificationEmailTemplate = ({ name, verificationUrl }) => `
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:32px 40px;text-align:center;">
-              <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">ግቢ Bazzar</h1>
-              <p style="color:#bfdbfe;margin:6px 0 0;font-size:14px;">UniBazzar – University Marketplace</p>
+              <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">áŒá‰¢ Bazzar</h1>
+              <p style="color:#bfdbfe;margin:6px 0 0;font-size:14px;">UniBazzar â€“ University Marketplace</p>
             </td>
           </tr>
           <!-- Body -->
           <tr>
             <td style="padding:40px 40px 32px;">
-              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;">Hello, ${name}! 👋</h2>
+              <h2 style="margin:0 0 16px;color:#1e293b;font-size:22px;">Hello, ${name}! ðŸ‘‹</h2>
               <p style="color:#475569;line-height:1.7;margin:0 0 24px;">
                 Thank you for creating your UniBazzar account. To complete your registration and start buying and selling on campus, please verify your email address.
               </p>
@@ -42,7 +42,7 @@ export const verificationEmailTemplate = ({ name, verificationUrl }) => `
           <!-- Footer -->
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-              <p style="color:#94a3b8;font-size:12px;margin:0;">© 2026 UniBazzar · All rights reserved</p>
+              <p style="color:#94a3b8;font-size:12px;margin:0;">Â© 2026 UniBazzar Â· All rights reserved</p>
             </td>
           </tr>
         </table>
@@ -69,7 +69,7 @@ export const resetPasswordEmailTemplate = ({ name, resetUrl }) => `
           <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#dc2626,#b91c1c);padding:32px 40px;text-align:center;">
-              <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">ግቢ Bazzar</h1>
+              <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800;letter-spacing:-0.5px;">áŒá‰¢ Bazzar</h1>
               <p style="color:#fecaca;margin:6px 0 0;font-size:14px;">Password Reset Request</p>
             </td>
           </tr>
@@ -87,7 +87,7 @@ export const resetPasswordEmailTemplate = ({ name, resetUrl }) => `
                 </a>
               </div>
               <p style="color:#94a3b8;font-size:13px;line-height:1.6;margin:24px 0 0;">
-                This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email — your password will not change.
+                This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email â€” your password will not change.
               </p>
               <p style="color:#94a3b8;font-size:12px;margin:12px 0 0;word-break:break-all;">
                 Or copy this URL: ${resetUrl}
@@ -97,7 +97,7 @@ export const resetPasswordEmailTemplate = ({ name, resetUrl }) => `
           <!-- Footer -->
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
-              <p style="color:#94a3b8;font-size:12px;margin:0;">© 2026 UniBazzar · All rights reserved</p>
+              <p style="color:#94a3b8;font-size:12px;margin:0;">Â© 2026 UniBazzar Â· All rights reserved</p>
             </td>
           </tr>
         </table>
@@ -107,3 +107,4 @@ export const resetPasswordEmailTemplate = ({ name, resetUrl }) => `
 </body>
 </html>
 `;
+
