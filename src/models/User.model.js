@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     },
     verificationToken: String,
     verificationTokenExpire: Date,
+    verificationEmailSentAt: Date,
 
     // Profile fields
     avatar: {
