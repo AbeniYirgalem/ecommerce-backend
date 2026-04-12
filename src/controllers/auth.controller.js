@@ -10,40 +10,115 @@ const generateToken = (id) =>
     expiresIn: process.env.JWT_EXPIRE || "30d",
   });
 
+const VERIFICATION_TOKEN_TTL_MS = 60 * 60 * 1000;
+const VERIFICATION_RESEND_COOLDOWN_MS = 60 * 1000;
+const DEFAULT_FRONTEND_URL = "https://ecommerce-frontend-six-vert.vercel.app";
+
+const createVerificationTokenRaw = () => crypto.randomBytes(32).toString("hex");
+
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+const buildVerificationUrl = (verificationTokenRaw) => {
+  const frontendUrl =
+    process.env.FRONTEND_URL?.trim().replace(/\/$/, "") || DEFAULT_FRONTEND_URL;
+  return `${frontendUrl}/verify/${verificationTokenRaw}`;
+};
+
+const queueVerificationEmail = ({ email, name, verificationUrl }) => {
+  setImmediate(async () => {
+    try {
+      await sendEmail({
+        to: email,
+        subject: "Verify your UniBazzar account",
+        html: verificationEmailTemplate({ name, verificationUrl }),
+      });
+    } catch (error) {
+      console.error("Failed to send verification email:", error.message);
+    }
+  });
+};
+
+const issueVerificationForUser = async (user) => {
+  const verificationTokenRaw = createVerificationTokenRaw();
+  user.verificationToken = hashToken(verificationTokenRaw);
+  user.verificationTokenExpire = Date.now() + VERIFICATION_TOKEN_TTL_MS;
+  user.verificationEmailSentAt = new Date();
+  await user.save({ validateBeforeSave: false });
+  return verificationTokenRaw;
+};
+
+const handleUnverifiedExistingUser = async (user, res) => {
+  const sentAt = user.verificationEmailSentAt
+    ? new Date(user.verificationEmailSentAt).getTime()
+    : 0;
+  const withinCooldown = Date.now() - sentAt < VERIFICATION_RESEND_COOLDOWN_MS;
+
+  if (!withinCooldown) {
+    const verificationTokenRaw = await issueVerificationForUser(user);
+    const verificationUrl = buildVerificationUrl(verificationTokenRaw);
+    queueVerificationEmail({
+      email: user.email,
+      name: user.name,
+      verificationUrl,
+    });
+  }
+
+  return res.status(200).json({
+    message:
+      "Account already registered but not verified. Please check your email to verify your account.",
+    email: user.email,
+    alreadyRegistered: true,
+    verificationEmailQueued: !withinCooldown,
+  });
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+    const normalizedEmail = String(email || "")
+      .trim()
+      .toLowerCase();
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: "Please provide a valid email" });
     }
 
-    // Create user
-    const user = await User.create({ name, email, password });
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists) {
+      if (userExists.isVerified) {
+        return res.status(409).json({ message: "User already exists" });
+      }
 
-    // Generate verification token
-    const verificationTokenRaw = crypto.randomBytes(32).toString("hex");
-    const verificationTokenHashed = crypto
-      .createHash("sha256")
-      .update(verificationTokenRaw)
-      .digest("hex");
+      return await handleUnverifiedExistingUser(userExists, res);
+    }
 
-    user.verificationToken = verificationTokenHashed;
-    // 1 hour expiry
-    user.verificationTokenExpire = Date.now() + 60 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+    let user;
+    try {
+      user = await User.create({ name, email: normalizedEmail, password });
+    } catch (error) {
+      if (error?.code === 11000) {
+        const existingUser = await User.findOne({ email: normalizedEmail });
 
-    const verificationUrl = `${process.env.CLIENT_URL?.replace(/\/$/, "") || "http://localhost:5173"}/verify/${verificationTokenRaw}`;
+        if (existingUser && !existingUser.isVerified) {
+          return await handleUnverifiedExistingUser(existingUser, res);
+        }
 
-    // Send verification email (await to surface errors)
-    await sendEmail({
-      to: user.email,
-      subject: "Verify your UniBazzar account",
-      html: verificationEmailTemplate({ name: user.name, verificationUrl }),
+        return res.status(409).json({ message: "User already exists" });
+      }
+
+      throw error;
+    }
+
+    const verificationTokenRaw = await issueVerificationForUser(user);
+    const verificationUrl = buildVerificationUrl(verificationTokenRaw);
+    queueVerificationEmail({
+      email: user.email,
+      name: user.name,
+      verificationUrl,
     });
 
     // Do NOT log in automatically; require verification first
@@ -166,4 +241,3 @@ export const logout = (req, res) => {
 
   res.status(200).json({ message: "Logged out" });
 };
-
