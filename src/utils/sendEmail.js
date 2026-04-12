@@ -1,8 +1,8 @@
-﻿import nodemailer from 'nodemailer';
+﻿import nodemailer from "nodemailer";
 
 const sendEmail = async ({ to, subject, html }) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
     port: Number(process.env.EMAIL_PORT) || 587,
     secure: false, // true for port 465, false for 587
     auth: {
@@ -12,11 +12,14 @@ const sendEmail = async ({ to, subject, html }) => {
   });
 
   try {
+    const safeSubject = String(subject || "UniBazzar Notification");
+    const safeHtml = String(html || "");
+
     await transporter.sendMail({
-      from: `"UniBazzar áŒá‰¢ Bazzar" <${process.env.EMAIL_USER}>`,
+      from: `"UniBazzar" <${process.env.EMAIL_USER}>`,
       to,
-      subject,
-      html,
+      subject: safeSubject,
+      html: safeHtml,
     });
     console.log(`Email sent successfully to ${to}`);
   } catch (error) {
@@ -26,4 +29,3 @@ const sendEmail = async ({ to, subject, html }) => {
 };
 
 export default sendEmail;
-
