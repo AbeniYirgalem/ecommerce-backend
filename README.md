@@ -19,6 +19,7 @@ The backend follows an MVC-like, scalable folder structure:
 - **JWT Authentication**: Password hashing (bcrypt) and stateless session tokens.
 - **Helmet**: Secures HTTP headers to protect against common web vulnerabilities.
 - **CORS**: Configured to accept requests only from the frontend (`CLIENT_URL`).
+- **Verification Emails**: Verification links are generated from `FRONTEND_URL` (production frontend origin).
 - **Rate Limiting**: Defends against brute-force attacks by limiting IP request counts.
 - **Input Validation**: `express-validator` verifies expected input formats before hitting controllers.
 - **Global Error Handling**: Prevents app crashes and format errors securely (obscuring stack traces in production).
@@ -32,16 +33,19 @@ The backend follows an MVC-like, scalable folder structure:
    ```
 
 2. **Environment Variables:**
-   Ensure you have a `.env` file at the root of `ecommerce-backend/`. Example:
+   Copy the demo environment file and adjust values for your machine:
 
-   ```env
-   NODE_ENV=development
-   PORT=5000
-   MONGO_URI=mongodb://127.0.0.1:27017/unibazzar
-   JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
-   JWT_EXPIRE=30d
-   CLIENT_URL=http://localhost:5173
+   ```bash
+   cp .env.example .env
    ```
+
+   On Windows PowerShell:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   The `.env.example` includes all variables used by the backend (MongoDB, JWT, email, Cloudinary, Gemini, Redis, and chat worker settings).
 
 3. **Start MongoDB:**
    Make sure your local MongoDB instance is running, or replace `MONGO_URI` with a MongoDB Atlas connection string.
@@ -54,6 +58,18 @@ The backend follows an MVC-like, scalable folder structure:
 
    # Production mode
    npm start
+   ```
+
+## Demo (Local)
+
+1. Install dependencies: `npm install`
+2. Copy `.env.example` to `.env`
+3. Start MongoDB and Redis locally
+4. Start API: `npm run dev`
+5. Verify API is up:
+
+   ```bash
+   curl http://localhost:5000/
    ```
 
 ## Connecting Frontend to Backend
