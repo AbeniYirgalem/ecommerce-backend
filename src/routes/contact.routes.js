@@ -2,6 +2,7 @@
 import sendEmail from "../utils/sendEmail.js";
 
 const router = express.Router();
+const CONTACT_RECEIVER_EMAIL = "abenezeryirgalem0@gmail.com";
 
 router.post("/", async (req, res) => {
   try {
@@ -14,16 +15,8 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
-    if (!adminEmail) {
-      return res.status(500).json({
-        success: false,
-        message: "Email is not configured. Please try again later.",
-      });
-    }
-
     await sendEmail({
-      to: adminEmail,
+      to: CONTACT_RECEIVER_EMAIL,
       subject: `New Contact Message from ${name}`,
       html: `
         <h3>New Message from UniBazzar</h3>
@@ -45,4 +38,3 @@ router.post("/", async (req, res) => {
 });
 
 export default router;
-
