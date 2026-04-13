@@ -45,7 +45,7 @@ The backend follows an MVC-like, scalable folder structure:
    Copy-Item .env.example .env
    ```
 
-   The `.env.example` includes all variables used by the backend (MongoDB, JWT, email, Cloudinary, Gemini, Redis, and chat worker settings).
+   The `.env.example` includes all variables used by the backend (MongoDB, JWT, Brevo email API, Cloudinary, Gemini, Redis, and chat worker settings).
 
 3. **Start MongoDB:**
    Make sure your local MongoDB instance is running, or replace `MONGO_URI` with a MongoDB Atlas connection string.
