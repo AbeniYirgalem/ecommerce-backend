@@ -41,12 +41,15 @@ const setCachedResult = (message, result) => {
 };
 
 // Prune stale cache entries every 10 minutes to prevent memory growth
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, v] of queryCache.entries()) {
-    if (v.expiresAt <= now) queryCache.delete(k);
-  }
-}, 10 * 60 * 1000);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [k, v] of queryCache.entries()) {
+      if (v.expiresAt <= now) queryCache.delete(k);
+    }
+  },
+  10 * 60 * 1000,
+);
 
 // â”€â”€â”€ Job Processor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -56,57 +59,106 @@ setInterval(() => {
  * @param {import('bullmq').Job} job
  */
 const processJob = async (job) => {
-  const { userId, message, timestamp } = job.data;
+  const { userId = "anonymous", message = "" } = job.data || {};
   const logContext = `[chatWorker][job:${job.id}][user:${userId}]`;
+  const startedAt = Date.now();
 
-  console.log(`${logContext} Starting. Message: "${message.slice(0, 80)}"`);
+  try {
+    const trimmed = String(message).trim();
+    if (!trimmed) {
+      throw new Error("Received empty message payload");
+    }
 
-  // â”€â”€ 1. Mark the DB record as processing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  await ChatLog.findOneAndUpdate(
-    { jobId: job.id },
-    { status: "processing" },
-  );
+    console.log(`${logContext} Started. Message: "${trimmed.slice(0, 80)}"`);
 
-  // â”€â”€ 2. Check cache for identical recent query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const cached = getCachedResult(message);
-  if (cached) {
-    console.log(`${logContext} Cache hit â€” returning cached result`);
     await ChatLog.findOneAndUpdate(
-      { jobId: job.id },
+      { jobId: String(job.id) },
+      {
+        userId,
+        message: trimmed,
+        status: "processing",
+        attemptsMade: job.attemptsMade,
+      },
+      { upsert: true },
+    );
+
+    const cached = getCachedResult(trimmed);
+    if (cached) {
+      console.log(`${logContext} Cache hit. Returning cached result`);
+      await ChatLog.findOneAndUpdate(
+        { jobId: String(job.id) },
+        {
+          status: "completed",
+          reply: cached.reply,
+          type: cached.type,
+          products: cached.products || [],
+          priceBand: cached.priceBand || null,
+          attemptsMade: job.attemptsMade,
+          completedAt: new Date(),
+        },
+      );
+
+      return cached;
+    }
+
+    const result = await processMessage(trimmed);
+    setCachedResult(trimmed, result);
+
+    await ChatLog.findOneAndUpdate(
+      { jobId: String(job.id) },
       {
         status: "completed",
-        reply: cached.reply,
-        type: cached.type,
-        products: cached.products || [],
-        priceBand: cached.priceBand || null,
+        reply: result.reply,
+        type: result.type,
+        products: result.products || [],
+        priceBand: result.priceBand || null,
+        errorMessage: null,
+        attemptsMade: job.attemptsMade,
         completedAt: new Date(),
       },
     );
-    return cached; // BullMQ stores this as job.returnvalue
+
+    console.log(
+      `${logContext} Completed in ${Date.now() - startedAt}ms. Type: ${result?.type || "text"}`,
+    );
+
+    return result;
+  } catch (err) {
+    const failureReason =
+      err?.message || "Chat processing failed due to an unknown worker error";
+
+    console.error(
+      `${logContext} Failed after ${Date.now() - startedAt}ms: ${failureReason}`,
+    );
+
+    await job
+      .updateData({
+        ...(job.data || {}),
+        failureReason,
+      })
+      .catch((updateErr) => {
+        console.error(
+          `${logContext} Failed to persist failure reason on job data: ${updateErr.message}`,
+        );
+      });
+
+    await ChatLog.findOneAndUpdate(
+      { jobId: String(job.id) },
+      {
+        status: "failed",
+        errorMessage: failureReason,
+        attemptsMade: job.attemptsMade,
+        completedAt: new Date(),
+      },
+      { upsert: true },
+    ).catch((dbErr) => {
+      console.error(
+        `${logContext} Failed to persist failure in MongoDB: ${dbErr.message}`,
+      );
+    });
+
+    throw new Error(failureReason);
   }
-
-  // â”€â”€ 3. Call the AI service â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const result = await processMessage(message);
-  console.log(`${logContext} AI processed. Type: ${result.type}`);
-
-  // â”€â”€ 4. Cache the result â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  setCachedResult(message, result);
-
-  // â”€â”€ 5. Persist to MongoDB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  await ChatLog.findOneAndUpdate(
-    { jobId: job.id },
-    {
-      status: "completed",
-      reply: result.reply,
-      type: result.type,
-      products: result.products || [],
-      priceBand: result.priceBand || null,
-      completedAt: new Date(),
-    },
-  );
-
-  console.log(`${logContext} Completed successfully`);
-  return result; // BullMQ serialises this into job.returnvalue in Redis
 };
 
 // â”€â”€â”€ Worker Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -119,7 +171,9 @@ let workerInstance = null;
  */
 export const startChatWorker = () => {
   if (workerInstance) {
-    console.warn("[chatWorker] Worker already running â€” skipping duplicate start");
+    console.warn(
+      "[chatWorker] Worker already running â€” skipping duplicate start",
+    );
     return workerInstance;
   }
 
@@ -127,37 +181,57 @@ export const startChatWorker = () => {
     connection: redisConnection,
     concurrency: CONCURRENCY,
     // Automatically extend job lock if the AI call takes longer than expected
-    lockDuration: 60_000, // 60 s lock
+    lockDuration: 90_000, // 90 s lock
     lockRenewTime: 20_000, // Renew every 20 s
   });
 
   // â”€â”€ Event listeners â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   workerInstance.on("completed", (job, result) => {
-    console.log(`[chatWorker] âœ… Job ${job.id} completed. Type: ${result?.type}`);
+    console.log(
+      `[chatWorker] Job ${job.id} completed. Type: ${result?.type || "text"} | attempts: ${job.attemptsMade}`,
+    );
   });
 
   workerInstance.on("failed", async (job, err) => {
+    const failureReason =
+      err?.message ||
+      job?.failedReason ||
+      job?.data?.failureReason ||
+      "Chat worker failed unexpectedly";
+
     console.error(
-      `[chatWorker] âŒ Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err.message}`,
+      `[chatWorker] Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${failureReason}`,
     );
+
     // Update DB record so polling endpoint can surface the failure
     if (job?.id) {
+      await job
+        .updateData({ ...(job.data || {}), failureReason })
+        .catch(() => {});
+
       await ChatLog.findOneAndUpdate(
-        { jobId: job.id },
+        { jobId: String(job.id) },
         {
           status: "failed",
-          errorMessage: err.message,
+          errorMessage: failureReason,
+          attemptsMade: job.attemptsMade,
           completedAt: new Date(),
         },
+        { upsert: true },
       ).catch((dbErr) =>
-        console.error("[chatWorker] DB update on failure failed:", dbErr.message),
+        console.error(
+          "[chatWorker] DB update on failure failed:",
+          dbErr.message,
+        ),
       );
     }
   });
 
   workerInstance.on("stalled", (jobId) => {
-    console.warn(`[chatWorker] âš ï¸  Job ${jobId} stalled â€” will be retried`);
+    console.warn(
+      `[chatWorker] âš ï¸  Job ${jobId} stalled â€” will be retried`,
+    );
   });
 
   workerInstance.on("error", (err) => {
@@ -184,4 +258,3 @@ export const stopChatWorker = async () => {
 };
 
 export default { startChatWorker, stopChatWorker };
-
