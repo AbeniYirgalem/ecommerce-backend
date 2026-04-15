@@ -71,6 +71,13 @@ const chatLogSchema = new mongoose.Schema(
       default: null,
     },
 
+    /** Number of processing attempts made by BullMQ */
+    attemptsMade: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     /** When the worker finished processing */
     completedAt: {
       type: Date,
@@ -88,4 +95,3 @@ chatLogSchema.index({ userId: 1, createdAt: -1 });
 const ChatLog = mongoose.model("ChatLog", chatLogSchema);
 
 export default ChatLog;
-

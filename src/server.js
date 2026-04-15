@@ -6,7 +6,7 @@ import { startChatWorker, stopChatWorker } from "./workers/chatWorker.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
-const ENABLE_CHAT_WORKER = process.env.ENABLE_CHAT_WORKER === "true";
+const ENABLE_CHAT_WORKER = process.env.ENABLE_CHAT_WORKER !== "false";
 
 /**
  * ========================
@@ -24,7 +24,9 @@ connectDB()
       startChatWorker();
       console.log("✅ Chat worker started");
     } else {
-      console.log("[server] Chat worker disabled");
+      console.warn(
+        "[server] Chat worker explicitly disabled (ENABLE_CHAT_WORKER=false)",
+      );
     }
 
     /**
