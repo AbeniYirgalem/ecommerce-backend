@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const PREFERRED_MODELS = ["gemini-1.5-flash-8b", "gemini-pro"];
