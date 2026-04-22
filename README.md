@@ -72,6 +72,22 @@ The backend follows an MVC-like, scalable folder structure:
    curl http://localhost:5000/
    ```
 
+## 📖 API Documentation (Swagger)
+
+Explore and test the UniBazzar API using Swagger UI — no Postman required.
+
+🔗 **Live Docs:**  
+https://ecommerce-backend-wcy3.onrender.com/api-docs
+
+### What you can do:
+
+- View all available endpoints
+- Read request/response schemas
+- Test APIs directly in the browser
+- Authenticate using JWT via the **Authorize** button
+
+> Use this interface to interact with the live backend in real time.
+
 ## Connecting Frontend to Backend
 
 1. In your frontend directory (`ecommerce-frontend`), find or create the `.env` file (or `.env.local` for Vite).
