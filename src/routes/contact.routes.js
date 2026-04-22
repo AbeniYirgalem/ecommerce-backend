@@ -5,6 +5,34 @@ import { validate } from "../middlewares/validate.middleware.js";
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/contact:
+ *   post:
+ *     summary: Send a contact message
+ *     tags: [Contact]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Abenezer"
+ *               email:
+ *                 type: string
+ *                 example: "abenezer@example.com"
+ *               message:
+ *                 type: string
+ *                 example: "Hi, I need help with my account settings."
+ *     responses:
+ *       200:
+ *         description: Message sent successfully
+ *       400:
+ *         description: Validation error
+ */
 router.post(
   "/",
   [

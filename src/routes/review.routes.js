@@ -6,6 +6,34 @@ import { validate } from "../middlewares/validate.middleware.js";
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/reviews:
+ *   post:
+ *     summary: Create a review for a target user
+ *     tags: [Reviews]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               targetUserId:
+ *                 type: string
+ *                 example: "661f25c7f47a87a7f1a78123"
+ *               rating:
+ *                 type: number
+ *                 example: 5
+ *               comment:
+ *                 type: string
+ *                 example: "Great communication and smooth transaction."
+ *     responses:
+ *       201:
+ *         description: Review created
+ *       401:
+ *         description: Unauthorized
+ */
 router.post(
   "/",
   protectWithMessage("Please log in to write a review"),
@@ -21,7 +49,22 @@ router.post(
   createReview,
 );
 
+/**
+ * @swagger
+ * /api/reviews/{targetUserId}:
+ *   get:
+ *     summary: Get reviews for a target user
+ *     tags: [Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: targetUserId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reviews returned
+ */
 router.get("/:targetUserId", getReviews);
 
 export default router;
-
