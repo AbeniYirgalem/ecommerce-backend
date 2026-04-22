@@ -5,8 +5,10 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import path from "path";
 import { rateLimit } from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
 
 import { notFound, errorHandler } from "./middlewares/error.middleware.js";
+import swaggerSpec from "../swagger/swaggerConfig.js";
 
 // Routes
 import authRoutes from "./routes/auth.routes.js";
@@ -45,7 +47,7 @@ app.use(
       return callback(null, true);
     },
     credentials: true,
-  })
+  }),
 );
 
 /**
@@ -94,6 +96,13 @@ if (process.env.NODE_ENV === "development") {
  * ========================
  */
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+/**
+ * ========================
+ * API DOCS
+ * ========================
+ */
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
  * ========================
