@@ -32,6 +32,9 @@ const userSchema = new mongoose.Schema(
     verificationToken: String,
     verificationTokenExpire: Date,
     verificationEmailSentAt: Date,
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    resetPasswordEmailSentAt: Date,
 
     // Profile fields
     avatar: {
